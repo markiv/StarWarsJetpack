@@ -31,8 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHost
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.starwars.data.Film
 import com.example.starwars.data.Person
@@ -62,16 +63,30 @@ class MainActivity : ComponentActivity() {
                     },
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
-//                    NavHost
-                    FilmDetails(
-                        1, modifier = Modifier.padding(innerPadding)
-                    )
+                    val navController = rememberNavController()
+                    NavigationGraph(navController, modifier = Modifier.padding(innerPadding))
+//                    FilmDetails(
+//                        1, modifier = Modifier.padding(innerPadding)
+//                    )
 //                    PersonDetails(
 //                        2, modifier = Modifier.padding(innerPadding)
 //                    )
                 }
             }
         }
+    }
+}
+
+sealed class Screen(val route: String) {
+    object Film : Screen("film")
+    object Person : Screen("person")
+}
+
+@Composable
+fun NavigationGraph(navController: NavHostController, modifier: Modifier) {
+    NavHost(navController, startDestination = Screen.Person.route) {
+        composable(Screen.Film.route) { FilmDetails(1) }
+        composable(Screen.Person.route) { PersonDetails(1) }
     }
 }
 
@@ -97,7 +112,6 @@ fun FilmDetails(id: Int, modifier: Modifier = Modifier) {
         }
     }
 }
-
 
 @Composable
 fun PersonDetails(id: Int, modifier: Modifier = Modifier) {
