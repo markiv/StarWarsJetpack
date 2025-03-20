@@ -1,6 +1,8 @@
 package com.example.starwars.data
 
 import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -43,8 +45,8 @@ class StarWarsService {
 
     val api = retrofit.create(StarWarsApi::class.java)
 
-    suspend fun getPerson(id: Int): Person {
-        return api.getPerson(id)
+    suspend fun getPerson(id: Int): Person = withContext(Dispatchers.IO) {
+        api.getPerson(id)
     }
 
     suspend fun getFilm(id: Int): Film {

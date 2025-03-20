@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +25,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,14 +39,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.starwars.data.Film
-import com.example.starwars.data.Person
 import com.example.starwars.data.StarWarsService
 import com.example.starwars.ui.theme.StarWarsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
+    private val personViewModel by viewModels<PersonViewModel>()
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,13 +68,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
                     val navController = rememberNavController()
-                    NavigationGraph(navController, modifier = Modifier.padding(innerPadding))
-//                    FilmDetails(
-//                        1, modifier = Modifier.padding(innerPadding)
-//                    )
-//                    PersonDetails(
-//                        2, modifier = Modifier.padding(innerPadding)
-//                    )
+                    NavigationGraph(
+                        navController,
+                        personViewModel,
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
         }
@@ -83,15 +85,26 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
-fun NavigationGraph(navController: NavHostController, modifier: Modifier) {
+fun NavigationGraph(
+    navController: NavHostController,
+    personViewModel: PersonViewModel,
+    modifier: Modifier,
+) {
     NavHost(navController, startDestination = Screen.Person.route) {
-        composable(Screen.Film.route) { FilmDetails(1) }
-        composable(Screen.Person.route) { PersonDetails(1) }
+        composable(Screen.Film.route) { FilmDetails(navController, 1, modifier) }
+        composable(Screen.Person.route) {
+            PersonDetails(
+                navController,
+                personViewModel,
+                1,
+                modifier
+            )
+        }
     }
 }
 
 @Composable
-fun FilmDetails(id: Int, modifier: Modifier = Modifier) {
+fun FilmDetails(navController: NavHostController, id: Int, modifier: Modifier = Modifier) {
     val scope = CoroutineScope(Dispatchers.Default)
     val service = StarWarsService()
     var film by remember { mutableStateOf<Film?>(null) }
@@ -102,43 +115,51 @@ fun FilmDetails(id: Int, modifier: Modifier = Modifier) {
         }
     }
 
-    if (film == null) {
-        Text("Loading...")
-    } else {
-        val it = film!!
+    if (film != null) {
+        val film = film!!
         Column(modifier = modifier) {
-            Text(text = it.title)
-            Text(text = it.opening_crawl)
+            Text(text = film.title)
+            Text(text = film.opening_crawl)
         }
+    } else {
+        Text("Loading...")
     }
 }
 
 @Composable
-fun PersonDetails(id: Int, modifier: Modifier = Modifier) {
-    val scope = CoroutineScope(Dispatchers.Default)
-    val service = StarWarsService()
-    var person by remember { mutableStateOf<Person?>(null) }
+fun PersonDetails(
+    navController: NavHostController,
+    viewModel: PersonViewModel,
+    id: Int,
+    modifier: Modifier = Modifier,
+) {
+    val person by viewModel.person.observeAsState()
 
     LaunchedEffect(id) {
-        scope.launch {
-            person = service.getPerson(id)
-        }
+        viewModel.fetch(id)
     }
 
     if (person != null) {
-        val it = person!!
         Column(
             modifier = modifier.verticalScroll(rememberScrollState())
         ) {
-            Detail("Name", it.name)
-            Detail("Gender", it.gender)
-            Detail("Eye Color", it.eye_color)
-            Detail("Hair Color", it.hair_color)
-            Detail("Skin Color", it.skin_color)
-            Detail("Height", it.height)
-            Detail("Home World", it.homeworld.toString())
-            Detail("Films", it.films.toString())
-            Detail("Species", it.species.toString())
+            with(person!!) {
+                Detail("Name", name)
+                Detail("Gender", gender)
+                Detail("Eye Color", eye_color)
+                Detail("Hair Color", hair_color)
+                Detail("Skin Color", skin_color)
+                Detail("Height", height)
+                Detail("Home World", homeworld.toString())
+                Detail("Films", films.toString())
+                Detail("Species", species.toString())
+            }
+
+            Button(onClick = {
+                navController.navigate(Screen.Film.route)
+            }) {
+                Text(text = "Navigate to Screen 1")
+            }
         }
     } else {
         Text(text = "Loading...")
