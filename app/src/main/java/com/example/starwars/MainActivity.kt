@@ -90,13 +90,13 @@ fun NavigationGraph(
     personViewModel: PersonViewModel,
     modifier: Modifier,
 ) {
-    NavHost(navController, startDestination = Screen.Person.route) {
+    NavHost(navController, startDestination = Screen.Person.route + "/2") {
         composable(Screen.Film.route) { FilmDetails(navController, 1, modifier) }
-        composable(Screen.Person.route) {
+        composable(Screen.Person.route + "/{id}") {
             PersonDetails(
                 navController,
                 personViewModel,
-                1,
+                it.arguments?.getString("id")?.toInt() ?: 1,
                 modifier
             )
         }
@@ -158,6 +158,7 @@ fun PersonDetails(
             Button(onClick = {
                 navController.navigate(Screen.Film.route)
             }) {
+
                 Text(text = "Navigate to Screen 1")
             }
         }
