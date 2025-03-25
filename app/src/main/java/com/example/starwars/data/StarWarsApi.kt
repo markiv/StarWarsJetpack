@@ -4,11 +4,13 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Cache
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Url
 import java.io.File
 
 interface StarWarsApi {
@@ -23,6 +25,21 @@ interface StarWarsApi {
 
     @GET("films")
     suspend fun getFilms(): List<Film>
+
+    @GET
+    suspend fun getFilm(@Url url: HttpUrl): Film
+
+    @GET
+    suspend fun getPerson(@Url url: HttpUrl): Person
+}
+
+inline fun <T> tryOrNull(expression: () -> T): T? {
+    return try {
+        expression()
+    } catch (e: Throwable) {
+        Log.e("StarWarsService", "Error", e)
+        null
+    }
 }
 
 class StarWarsService {
@@ -45,11 +62,21 @@ class StarWarsService {
 
     val api = retrofit.create(StarWarsApi::class.java)
 
-    suspend fun getPerson(id: Int): Person = withContext(Dispatchers.IO) {
-        api.getPerson(id)
+    suspend fun getPerson(id: Int): Person? = tryOrNull {
+        withContext(Dispatchers.IO) {
+            api.getPerson(id)
+        }
     }
 
-    suspend fun getFilm(id: Int): Film {
-        return api.getFilm(id)
+    suspend fun getFilm(id: Int): Film? = tryOrNull {
+        withContext(Dispatchers.IO) {
+            api.getFilm(id)
+        }
+    }
+
+    suspend fun getFilm(url: HttpUrl): Film? = tryOrNull {
+        withContext(Dispatchers.IO) {
+            api.getFilm(url)
+        }
     }
 }

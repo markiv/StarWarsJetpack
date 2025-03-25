@@ -57,21 +57,15 @@ class MainActivity : ComponentActivity() {
             StarWarsTheme {
                 Scaffold(
                     topBar = {
-                        TopAppBar(
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                titleContentColor = MaterialTheme.colorScheme.primary,
-                            ),
-                            title = { Text("Star Wars", fontWeight = FontWeight.Bold) }
-                        )
-                    },
-                    modifier = Modifier.fillMaxSize()
+                        TopAppBar(colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            titleContentColor = MaterialTheme.colorScheme.primary,
+                        ), title = { Text("Star Wars", fontWeight = FontWeight.Bold) })
+                    }, modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
                     val navController = rememberNavController()
                     NavigationGraph(
-                        navController,
-                        personViewModel,
-                        modifier = Modifier.padding(innerPadding)
+                        navController, personViewModel, modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
@@ -90,7 +84,7 @@ fun NavigationGraph(
     personViewModel: PersonViewModel,
     modifier: Modifier,
 ) {
-    NavHost(navController, startDestination = Screen.Person.route + "/2") {
+    NavHost(navController, startDestination = "person/1") {
         composable(Screen.Film.route) { FilmDetails(navController, 1, modifier) }
         composable(Screen.Person.route + "/{id}") {
             PersonDetails(
@@ -120,6 +114,7 @@ fun FilmDetails(navController: NavHostController, id: Int, modifier: Modifier = 
         Column(modifier = modifier) {
             Text(text = film.title)
             Text(text = film.opening_crawl)
+            Text(text = film.characters.toString())
         }
     } else {
         Text("Loading...")
@@ -134,6 +129,7 @@ fun PersonDetails(
     modifier: Modifier = Modifier,
 ) {
     val person by viewModel.person.observeAsState()
+    val films by viewModel.films.observeAsState()
 
     LaunchedEffect(id) {
         viewModel.fetch(id)
@@ -151,15 +147,17 @@ fun PersonDetails(
                 Detail("Skin Color", skin_color)
                 Detail("Height", height)
                 Detail("Home World", homeworld.toString())
-                Detail("Films", films.toString())
+                Detail("Films", (this.films?.count() ?: 0).toString())
                 Detail("Species", species.toString())
+            }
+            films?.forEach {
+                Detail("Film", it.title)
             }
 
             Button(onClick = {
-                navController.navigate(Screen.Film.route)
+                navController.navigate(Screen.Person.route + "/${id + 1}")
             }) {
-
-                Text(text = "Navigate to Screen 1")
+                Text(text = "Navigate to Next Person")
             }
         }
     } else {
@@ -179,9 +177,7 @@ fun Detail(label: String, value: String, modifier: Modifier = Modifier) {
             Spacer(Modifier.width(10.dp))
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = value,
-                textAlign = TextAlign.End,
-                style = MaterialTheme.typography.bodyMedium
+                text = value, textAlign = TextAlign.End, style = MaterialTheme.typography.bodyMedium
             )
         }
         HorizontalDivider()
