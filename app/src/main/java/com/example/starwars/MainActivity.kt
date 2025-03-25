@@ -45,6 +45,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 class MainActivity : ComponentActivity() {
     private val personViewModel by viewModels<PersonViewModel>()
@@ -129,7 +130,7 @@ fun PersonDetails(
     modifier: Modifier = Modifier,
 ) {
     val person by viewModel.person.observeAsState()
-    val films by viewModel.films.observeAsState()
+    val films by viewModel.films.collectAsStateWithLifecycle()
 
     LaunchedEffect(id) {
         viewModel.fetch(id)
